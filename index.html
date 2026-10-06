@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘 뭐 먹지? 🍽️</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
+  <style>
+    :root {
+      --cream: #fff8ec;
+      --cream-dark: #fbead0;
+      --orange: #ff8a3d;
+      --orange-dark: #e8691a;
+      --orange-light: #ffe2cc;
+      --text: #4a3426;
+      --text-soft: #8a6f5c;
+      --white: #ffffff;
+      --shadow: 0 6px 18px rgba(232, 105, 26, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    body {
+      background: var(--cream);
+      color: var(--text);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+      line-height: 1.5;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      color: var(--orange-dark);
+    }
+
+    header p {
+      margin: 6px 0 0;
+      color: var(--text-soft);
+    }
+
+    /* 조건 선택 영역 */
+    .panel {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 20px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    fieldset {
+      border: none;
+      margin: 0 0 18px;
+      padding: 0;
+      min-width: 0;
+    }
+
+    legend {
+      font-weight: 700;
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+      padding: 0;
+    }
+
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      position: relative;
+    }
+
+    .chip input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+
+    .chip span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--cream-dark);
+      background: var(--cream);
+      color: var(--text);
+      font-size: 0.95rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+
+    .chip span:hover {
+      border-color: var(--orange);
+    }
+
+    .chip input:checked + span {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: var(--white);
+      font-weight: 700;
+    }
+
+    .chip input:checked + span::before {
+      content: "✓ ";
+      white-space: pre;
+    }
+
+    .chip input:focus-visible + span {
+      outline: 3px solid var(--orange-dark);
+      outline-offset: 2px;
+    }
+
+    .chip span:active {
+      transform: scale(0.96);
+    }
+
+    /* 버튼 */
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 1rem;
+      min-height: 50px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    button:focus-visible {
+      outline: 3px solid var(--orange-dark);
+      outline-offset: 2px;
+    }
+
+    .btn-main {
+      flex: 1 1 100%;
+      background: var(--orange);
+      color: var(--white);
+      font-weight: 700;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 0 var(--orange-dark);
+    }
+
+    .btn-main:hover {
+      background: var(--orange-dark);
+    }
+
+    .btn-sub {
+      flex: 1 1 0;
+      background: var(--orange-light);
+      color: var(--orange-dark);
+      font-weight: 700;
+    }
+
+    .btn-sub:hover {
+      background: #ffd3b2;
+    }
+
+    .btn-sub:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* 결과 영역 */
+    .result {
+      margin-top: 20px;
+      background: var(--white);
+      border-radius: 24px;
+      padding: 24px 18px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result .message {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 1rem;
+      word-break: keep-all;
+    }
+
+    .result .message.warn {
+      color: var(--orange-dark);
+      font-weight: 700;
+    }
+
+    .food-emoji {
+      font-size: 4.5rem;
+      line-height: 1;
+      margin-bottom: 8px;
+      animation: pop 0.35s ease-out;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.4); opacity: 0; }
+      70% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    .food-name {
+      margin: 0;
+      font-size: 1.6rem;
+      color: var(--text);
+    }
+
+    .food-type {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 12px;
+      border-radius: 999px;
+      background: var(--orange-light);
+      color: var(--orange-dark);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .food-desc {
+      margin: 12px 0 14px;
+      color: var(--text-soft);
+      word-break: keep-all;
+    }
+
+    .food-info {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .info-badge {
+      background: var(--cream);
+      border: 2px solid var(--cream-dark);
+      border-radius: 16px;
+      padding: 8px 14px;
+      font-size: 0.95rem;
+    }
+
+    .info-badge strong {
+      color: var(--orange-dark);
+    }
+
+    .notice-one {
+      margin: 14px 0 0;
+      color: var(--orange-dark);
+      font-weight: 700;
+    }
+
+    .price-note {
+      margin: 16px 0 0;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-soft);
+      word-break: keep-all;
+    }
+
+    @media (max-width: 380px) {
+      header h1 { font-size: 1.7rem; }
+      .chip span { padding: 8px 12px; font-size: 0.9rem; }
+      .btn-sub { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>오늘 뭐 먹지? 🍽️</h1>
+      <p>조건을 고르면 점심 메뉴를 골라줄게요!</p>
+    </header>
+
+    <main>
+      <form class="panel" id="filterForm" onsubmit="return false;">
+        <fieldset>
+          <legend>🍱 음식 종류</legend>
+          <div class="options">
+            <label class="chip"><input type="radio" name="type" value="전체" checked><span>전체</span></label>
+            <label class="chip"><input type="radio" name="type" value="한식"><span>한식</span></label>
+            <label class="chip"><input type="radio" name="type" value="중식"><span>중식</span></label>
+            <label class="chip"><input type="radio" name="type" value="일식"><span>일식</span></label>
+            <label class="chip"><input type="radio" name="type" value="양식"><span>양식</span></label>
+            <label class="chip"><input type="radio" name="type" value="분식"><span>분식</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>💰 최대 예산</legend>
+          <div class="options">
+            <label class="chip"><input type="radio" name="budget" value="0" checked><span>제한 없음</span></label>
+            <label class="chip"><input type="radio" name="budget" value="8000"><span>8,000원</span></label>
+            <label class="chip"><input type="radio" name="budget" value="10000"><span>10,000원</span></label>
+            <label class="chip"><input type="radio" name="budget" value="15000"><span>15,000원</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>🌶️ 매운 정도</legend>
+          <div class="options">
+            <label class="chip"><input type="radio" name="spicy" value="any" checked><span>상관없음</span></label>
+            <label class="chip"><input type="radio" name="spicy" value="0"><span>안 매운 음식</span></label>
+            <label class="chip"><input type="radio" name="spicy" value="1"><span>살짝 매운 음식</span></label>
+            <label class="chip"><input type="radio" name="spicy" value="2"><span>매운 음식</span></label>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="button" class="btn-main" id="recommendBtn">점심 메뉴 추천받기</button>
+          <button type="button" class="btn-sub" id="retryBtn" disabled>🔄 다시 추천</button>
+          <button type="button" class="btn-sub" id="resetBtn">↩️ 조건 초기화</button>
+        </div>
+      </form>
+
+      <section class="result" id="result" aria-live="polite">
+        <p class="message">조건을 고르고 “점심 메뉴 추천받기”를 눌러보세요! 😋</p>
+      </section>
+
+      <p class="price-note">※ 표시된 가격은 실습용 예시 금액이며, 실제 식당 가격과 다를 수 있어요.</p>
+    </main>
+  </div>
+
+  <script>
+    // =====================================================================
+    // 🍚 메뉴 데이터 목록
+    // ---------------------------------------------------------------------
+    // ✏️ 학생 여러분! 메뉴를 추가하거나 수정하려면 이 목록을 바꾸면 돼요.
+    //   - name  : 메뉴 이름
+    //   - type  : 음식 종류 ("한식", "중식", "일식", "양식", "분식" 중 하나)
+    //   - emoji : 음식 이모지
+    //   - desc  : 짧은 설명
+    //   - price : 예상 가격 (숫자만, 원 단위)
+    //   - spicy : 매운 정도 (0 = 안 매움, 1 = 살짝 매움, 2 = 매움)
+    //
+    // 새 메뉴를 추가할 때는 아래 형식을 복사해서 목록 안에 붙여 넣으세요.
+    //   { name: "메뉴 이름", type: "한식", emoji: "🍲", desc: "설명", price: 9000, spicy: 0 },
+    // =====================================================================
+    const MENUS = [
+      // ---------- 🇰🇷 한식 메뉴 (여기에 한식 메뉴를 추가·수정하세요) ----------
+      { name: "김치찌개", type: "한식", emoji: "🍲", desc: "잘 익은 김치와 돼지고기를 넣고 보글보글 끓인 찌개", price: 8000, spicy: 2 },
+      { name: "된장찌개", type: "한식", emoji: "🥘", desc: "구수한 된장에 두부와 애호박이 듬뿍", price: 7500, spicy: 0 },
+      { name: "비빔밥", type: "한식", emoji: "🥗", desc: "여러 가지 나물과 고추장을 쓱쓱 비벼 먹는 한 그릇", price: 9000, spicy: 1 },
+      { name: "제육볶음", type: "한식", emoji: "🐖", desc: "매콤달콤한 양념에 볶은 돼지고기와 밥", price: 9500, spicy: 2 },
+      { name: "불고기덮밥", type: "한식", emoji: "🍛", desc: "달콤한 간장 불고기를 밥 위에 듬뿍 올린 덮밥", price: 10000, spicy: 0 },
+      { name: "순두부찌개", type: "한식", emoji: "🌶️", desc: "부드러운 순두부와 얼큰한 국물", price: 9000, spicy: 2 },
+      { name: "갈비탕", type: "한식", emoji: "🍖", desc: "푹 고은 소갈비로 끓여 낸 맑고 진한 국물", price: 14000, spicy: 0 },
+      { name: "물냉면", type: "한식", emoji: "🍜", desc: "시원한 육수에 쫄깃한 면, 더운 날 딱!", price: 11000, spicy: 0 },
+
+      // ---------- 🇨🇳 중식 메뉴 (여기에 중식 메뉴를 추가·수정하세요) ----------
+      { name: "짜장면", type: "중식", emoji: "🍝", desc: "달콤 짭짤한 춘장 소스에 비벼 먹는 국민 메뉴", price: 7000, spicy: 0 },
+      { name: "짬뽕", type: "중식", emoji: "🍜", desc: "해물과 채소가 가득한 얼큰한 빨간 국물", price: 8500, spicy: 2 },
+      { name: "볶음밥", type: "중식", emoji: "🍳", desc: "불맛 나는 고슬고슬 볶음밥과 짜장 소스", price: 8000, spicy: 0 },
+      { name: "마파두부덮밥", type: "중식", emoji: "🍚", desc: "부드러운 두부와 살짝 매콤한 소스", price: 9000, spicy: 1 },
+      { name: "고추잡채밥", type: "중식", emoji: "🫑", desc: "피망과 고기를 가늘게 썰어 볶은 잡채 덮밥", price: 10000, spicy: 1 },
+      { name: "마라탕", type: "중식", emoji: "🔥", desc: "얼얼하고 화끈한 마라 국물에 원하는 재료 듬뿍", price: 12000, spicy: 2 },
+      { name: "탕수육 세트", type: "중식", emoji: "🥢", desc: "바삭한 탕수육과 짜장면을 함께 즐기는 세트", price: 16000, spicy: 0 },
+
+      // ---------- 🇯🇵 일식 메뉴 (여기에 일식 메뉴를 추가·수정하세요) ----------
+      { name: "우동", type: "일식", emoji: "🍥", desc: "통통한 면발과 따끈한 가쓰오 국물", price: 7500, spicy: 0 },
+      { name: "규동", type: "일식", emoji: "🍚", desc: "달짝지근하게 조린 소고기를 올린 덮밥", price: 9000, spicy: 0 },
+      { name: "카레라이스", type: "일식", emoji: "🍛", desc: "진하고 살짝 매콤한 일본식 카레", price: 8500, spicy: 1 },
+      { name: "돈코츠 라멘", type: "일식", emoji: "🍜", desc: "진한 돼지뼈 육수와 차슈가 올라간 라멘", price: 10000, spicy: 0 },
+      { name: "매운 라멘", type: "일식", emoji: "🌶️", desc: "고추기름을 듬뿍 넣은 화끈한 라멘", price: 11000, spicy: 2 },
+      { name: "돈카츠", type: "일식", emoji: "🍱", desc: "겉바속촉 두툼한 등심 돈카츠 정식", price: 11500, spicy: 0 },
+      { name: "연어덮밥", type: "일식", emoji: "🐟", desc: "신선한 연어를 듬뿍 올린 사케동", price: 14000, spicy: 0 },
+      { name: "모둠 초밥", type: "일식", emoji: "🍣", desc: "여러 가지 생선 초밥을 한 번에 즐기는 세트", price: 17000, spicy: 0 },
+
+      // ---------- 🍝 양식 메뉴 (여기에 양식 메뉴를 추가·수정하세요) ----------
+      { name: "샌드위치", type: "양식", emoji: "🥪", desc: "햄, 치즈, 채소를 가득 넣은 든든한 샌드위치", price: 7000, spicy: 0 },
+      { name: "피자 조각 세트", type: "양식", emoji: "🍕", desc: "치즈가 쭉 늘어나는 피자 두 조각과 음료", price: 8000, spicy: 0 },
+      { name: "햄버거 세트", type: "양식", emoji: "🍔", desc: "육즙 가득 패티 버거와 감자튀김", price: 9500, spicy: 0 },
+      { name: "할라피뇨 버거", type: "양식", emoji: "🌶️", desc: "할라피뇨가 들어가 살짝 매콤한 버거", price: 10000, spicy: 1 },
+      { name: "토마토 파스타", type: "양식", emoji: "🍝", desc: "새콤달콤한 토마토 소스 스파게티", price: 12000, spicy: 0 },
+      { name: "아라비아따 파스타", type: "양식", emoji: "🔥", desc: "페퍼론치노로 맵게 볶은 토마토 파스타", price: 12500, spicy: 2 },
+      { name: "크림 리조또", type: "양식", emoji: "🧀", desc: "부드럽고 고소한 버섯 크림 리조또", price: 14000, spicy: 0 },
+      { name: "스테이크 플레이트", type: "양식", emoji: "🥩", desc: "잘 구운 스테이크와 구운 채소", price: 19000, spicy: 0 },
+
+      // ---------- 🍢 분식 메뉴 (여기에 분식 메뉴를 추가·수정하세요) ----------
+      { name: "김밥", type: "분식", emoji: "🍙", desc: "알록달록 재료를 꽉 채운 기본 김밥", price: 4000, spicy: 0 },
+      { name: "떡볶이", type: "분식", emoji: "🍢", desc: "쫄깃한 떡에 매콤달콤 빨간 양념", price: 5000, spicy: 2 },
+      { name: "치즈라면", type: "분식", emoji: "🍜", desc: "치즈를 올려 살짝 매콤하고 고소한 라면", price: 5500, spicy: 1 },
+      { name: "튀김 세트", type: "분식", emoji: "🍤", desc: "새우·고구마·김말이 튀김 모둠", price: 6000, spicy: 0 },
+      { name: "쫄면", type: "분식", emoji: "🥬", desc: "쫄깃한 면에 새콤매콤한 초고추장 양념", price: 7000, spicy: 2 },
+      { name: "로제 떡볶이", type: "분식", emoji: "🧡", desc: "크림과 고추장이 만나 부드럽게 매콤한 떡볶이", price: 7500, spicy: 1 },
+      { name: "오므라이스", type: "분식", emoji: "🍳", desc: "폭신한 달걀로 감싼 케첩 볶음밥", price: 8000, spicy: 0 }
+    ];
+    // ===================== 메뉴 데이터 끝 =====================
+
+    // 매운 정도 숫자를 화면에 보여줄 글자로 바꿔요.
+    const SPICY_LABELS = ["😊 안 매움", "🌶️ 살짝 매움", "🌶️🌶️ 매움"];
+
+    // 기본 선택값
+    const DEFAULTS = { type: "전체", budget: "0", spicy: "any" };
+
+    const form = document.getElementById("filterForm");
+    const resultBox = document.getElementById("result");
+    const recommendBtn = document.getElementById("recommendBtn");
+    const retryBtn = document.getElementById("retryBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    // 직전에 추천한 메뉴 (다시 추천할 때 제외하기 위해 기억해요)
+    let lastMenu = null;
+
+    function getConditions() {
+      return {
+        type: form.elements.type.value,
+        budget: Number(form.elements.budget.value),
+        spicy: form.elements.spicy.value
+      };
+    }
+
+    // 선택한 조건을 모두 만족하는 메뉴만 골라요.
+    function filterMenus(cond) {
+      return MENUS.filter(function (menu) {
+        const typeOk = cond.type === "전체" || menu.type === cond.type;
+        const budgetOk = cond.budget === 0 || menu.price <= cond.budget;
+        const spicyOk = cond.spicy === "any" || menu.spicy === Number(cond.spicy);
+        return typeOk && budgetOk && spicyOk;
+      });
+    }
+
+    function pickRandom(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function showMessage(text, isWarn) {
+      resultBox.innerHTML = "";
+      const p = document.createElement("p");
+      p.className = isWarn ? "message warn" : "message";
+      p.textContent = text;
+      resultBox.appendChild(p);
+    }
+
+    function showMenu(menu, isOnlyOne) {
+      resultBox.innerHTML = "";
+
+      const emoji = document.createElement("div");
+      emoji.className = "food-emoji";
+      emoji.textContent = menu.emoji;
+
+      const name = document.createElement("h2");
+      name.className = "food-name";
+      name.textContent = menu.name;
+
+      const type = document.createElement("span");
+      type.className = "food-type";
+      type.textContent = menu.type;
+
+      const desc = document.createElement("p");
+      desc.className = "food-desc";
+      desc.textContent = menu.desc;
+
+      const info = document.createElement("div");
+      info.className = "food-info";
+      info.innerHTML =
+        '<span class="info-badge">💰 예상 가격 <strong></strong></span>' +
+        '<span class="info-badge">매운 정도 <strong></strong></span>';
+      const strongs = info.querySelectorAll("strong");
+      strongs[0].textContent = menu.price.toLocaleString("ko-KR") + "원";
+      strongs[1].textContent = SPICY_LABELS[menu.spicy];
+
+      resultBox.append(emoji, name, type, desc, info);
+
+      if (isOnlyOne) {
+        const one = document.createElement("p");
+        one.className = "notice-one";
+        one.textContent = "조건에 맞는 메뉴가 하나예요.";
+        resultBox.appendChild(one);
+      }
+    }
+
+    // 추천하기 (excludeLast가 true면 직전 메뉴를 빼고 골라요)
+    function recommend(excludeLast) {
+      const matches = filterMenus(getConditions());
+
+      if (matches.length === 0) {
+        lastMenu = null;
+        retryBtn.disabled = true;
+        showMessage("조건에 맞는 메뉴가 없어요. 예산이나 다른 조건을 바꿔보세요.", true);
+        return;
+      }
+
+      if (matches.length === 1) {
+        lastMenu = matches[0];
+        retryBtn.disabled = false;
+        showMenu(lastMenu, true);
+        return;
+      }
+
+      let candidates = matches;
+      if (excludeLast && lastMenu) {
+        candidates = matches.filter(function (menu) { return menu !== lastMenu; });
+      }
+
+      lastMenu = pickRandom(candidates);
+      retryBtn.disabled = false;
+      showMenu(lastMenu, false);
+    }
+
+    // 조건이 바뀌면 이전 결과를 지우고 안내해요.
+    function onConditionChange() {
+      lastMenu = null;
+      retryBtn.disabled = true;
+      showMessage("조건이 바뀌었어요. 다시 추천받아 보세요.", false);
+    }
+
+    function resetConditions() {
+      form.elements.type.value = DEFAULTS.type;
+      form.elements.budget.value = DEFAULTS.budget;
+      form.elements.spicy.value = DEFAULTS.spicy;
+      onConditionChange();
+    }
+
+    // 추천 후 결과 카드가 화면에 보이도록 스크롤해요. (모바일에서 편하게)
+    function scrollToResult() {
+      resultBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    recommendBtn.addEventListener("click", function () { recommend(false); scrollToResult(); });
+    retryBtn.addEventListener("click", function () { recommend(true); scrollToResult(); });
+    resetBtn.addEventListener("click", resetConditions);
+    form.addEventListener("change", onConditionChange);
+  </script>
+</body>
+</html>
